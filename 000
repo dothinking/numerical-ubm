@@ -1,0 +1,15 @@
+Info    : -------------------------------------------------------
+Info    : Gmsh version   : 2.8.5
+Info    : Build OS       : Windows
+Info    : Build options  : 64Bit Ann Bamg Bfgs Blas Blossom Chaco DIntegration Fltk Gmm Jpeg(Fltk) Kbipack Lapack MathEx Med Mesh Metis Mmg3d Mpeg NativeFileChooser Netgen NoSocklenT ONELAB ONELABMetamodel OpenCascade OpenGL OptHom PETSc Parser Plugins Png(Fltk) Post RTree SLEPc Salome Solver Tetgen(1.5) Voro3D Zlib(Fltk)
+Info    : Build date     : 20140709
+Info    : Build host     : mywin
+Info    : Packager       : geuzaine
+Info    : Home directory : C:\Users\Administrator\AppData\Roaming/
+Info    : Launch date    : Wed Feb 04 23:52:37 2015
+Info    : Command line   : D:\Program Files\gmsh-2.8.5-Windows\gmsh.exe D:\My_Documents\Radial Forging\UBM\numerical ubm\test.geo
+Info    : -------------------------------------------------------
+Info    : Reading 'D:\My_Documents\Radial Forging\UBM\numerical ubm\test.geo'...
+Error   : 'D:\My_Documents\Radial Forging\UBM\numerical ubm\test.geo', line 8 : syntax error (;)
+Info    : Done reading 'D:\My_Documents\Radial Forging\UBM\numerical ubm\test.geo'
+Info    : Writing 'D:\My_Documents\Radial Forging\UBM\numerical ubm\000'...
