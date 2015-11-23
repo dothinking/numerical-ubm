@@ -76,25 +76,29 @@ def read_elements(filename,element_type):
 	FLAG_ELEMENT = "$Elements"
 	nde_bgn = lines.index(FLAG_NODE) + 1
 	ele_bgn = lines.index(FLAG_ELEMENT) + 1
+
 	### 节点数，单元数
 	num_nde = int(lines[nde_bgn])
 	num_ele = int(lines[ele_bgn]) # 可能还包括了不需要的单元类型，所以后面需要修正
+
 	### 节点数组
-	# 文件中从1开始节点编号，故将下标0置为节点总数
-	node_list = [[num_nde,0,0]] 
+	node_list = [] 
 	for node_line in lines[nde_bgn+1:nde_bgn+num_nde+1]:
 		node_temp = [float(x) for x in node_line.split()[1:]]
 		node_list.append(node_temp)
 	NODES = np.array(node_list)
+
 	### 单元数组
-	# 文件中从1开始单元编号，故将下标0置为单元总数
-	element_list = [[]] 
+	element_list = [] 
 	for element_line in lines[ele_bgn+1:ele_bgn+num_ele+1]:
 		element_line_list = element_line.split()
+
+		# 针对正确类型单元
 		if int(element_line_list[1]) == element_type :
-			element_temp = [int(x) for x in element_line_list[5:]] # 针对全四面体单元
+			# 注意：gmsh中节点编号从1开始，而numpy数组index从0开始，所以减1
+			element_temp = [int(x)-1 for x in element_line_list[5:]] 
 			element_list.append(element_temp)
-	element_list[0] = np.ones_like(element_list[1]) * (len(element_list)-1) # 正确类型的单元数
+
 	ELEMENTS = np.array(element_list)
 	return ELEMENTS,NODES
 
@@ -105,8 +109,9 @@ def belongs_to_element(elements,node_list):
 	* 输出：隶属的单元号集合
 	'''
 	node_list.shape = -1,1
-	t = np.array([x in node_list for x in elements[1:,:]])
-	return np.arange(1,elements[0][0]+1)[t]
+	t = np.array([x in node_list for x in elements])
+	index = np.arange(0,len(elements))
+	return index[t]
 
 def save_data(filename,postname, data, order=1, timestep=1):
 	'''
@@ -124,7 +129,7 @@ def save_data(filename,postname, data, order=1, timestep=1):
 	# 数据头
 	f.writelines("$NodeData\n1\n\"%s\"\n1\n%d\n3\n%d\n%d\n%d\n" % (postname,timestep,timestep,order,num-1))
 	# 节点数据，注意[1:-1]是为了去掉数组字符串化后的中括号
-	f.writelines(['%d %s' % (x,str(data[x])[1:-1] + "\n") for x in xrange(1,num)])
+	f.writelines(['%d %s\n' % (x,str(data[x])[1:-1]) for x in xrange(1,num)])
 	# 结束写入结束标记
 	f.writelines("$EndNodeData\n")
 	f.close()

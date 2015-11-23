@@ -8,39 +8,32 @@ import math
 import numpy as np
 from sympy import *
 
-z,r = symbols('z,r')
 
-def velocity_field(sym_stream_function,z,r):
-	'''
-	* 功能：根据流函数计算速度场
-	* 输入：流函数、两个维度的变量，输入应为Symbols变量
-	* 输出：速度场符号表达式列表
-	'''
-	vz = -diff(sym_stream_function,r) / r
-	vr = diff(sym_stream_function,z) / r
-	return vz,vr
 
-def plastic_strain_rate(sym_vz,sym_vr,z,r):
+def strain_rate(a, b):
 	'''
-	* 功能：根据速度场计算等效塑性应变率
-	* 输入：轴向速度、径向速度、坐标分量
-	* 输出：节点等效塑性应变符号表达式
+	* 功能：计算等效塑性应变率 / (v0*cotα)
+	* 输入：a,b 	待定参数
+	* 输出：等效塑性应变率函数 <function>
 	'''
+	z,r = symbols('z,r')
+
+	# 给定的速度场
+	sym_vr = 1/z**2 * (a*(r/z)**2 + b*(r/z))
+	sym_vz = 1 - (a*(r/z) + b) / z**2
+
+	# 根据速度场计算等效塑性应变率
 	strain_rate_r = diff(sym_vr,r)
 	strain_rate_z = diff(sym_vz,z)
 	strain_rate_sita = -(strain_rate_r+strain_rate_z)
 	strain_rate_rz = 0.5 * (diff(sym_vr,z)+diff(sym_vz,r))
 	strain_rate = sqrt(2.0/3.0*(strain_rate_r**2 + strain_rate_z**2 + strain_rate_sita**2 + 2.0*strain_rate_rz**2))
-	return strain_rate
 
-def strain_function(sym_strain_rate):
-	'''
-	* 功能：面积分所用单元被积函数
-	* 输入：等效塑性应变符号表达式
-	* 输出：节点函数值符号函数
-	'''
-	S = 2.0*pi*r*sym_strain_rate
-	return lambdify((z,r),S,'numpy')
+	# fun = lambda z,r: 2.0*np.pi*r*strain_rate(z,r)
+
+	# 函数化	
+	fun = lambdify((z,r),strain_rate,'numpy')
+	return fun
 
 def fun_flow_stress(ps):
 	'''
@@ -48,7 +41,8 @@ def fun_flow_stress(ps):
 	* 输入：等效塑性应变
 	* 输出：流动应力值
 	'''
-	return 618.14*ps**0.1184
+	fun = np.vectorize(lambda ps: 618.14*ps**0.1184)
+	return fun(ps)
 
 def fun_area_integral(sym_fun,elements,nodes,strain,ele_id,order=1):
 	'''
@@ -101,7 +95,7 @@ def fun_area_integral(sym_fun,elements,nodes,strain,ele_id,order=1):
 	### 计算积分点函数值
 	# val_strain = plastic_work(sym_strain,int_nodes[:,0],int_nodes[:,1],int_nodes[:,2]) # 应变
 	val_strain = sym_fun(int_nodes[:,0],int_nodes[:,1])
-	val_stress = flow_stress(int_strain[:,0]) # 应力
+	val_stress = fun_flow_stress(int_strain[:,0]) # 应力
 	val_nodes = val_strain * val_stress
 	### 计算单元积分值
 	val_ele = np.dot(val_nodes,weight)
@@ -109,7 +103,6 @@ def fun_area_integral(sym_fun,elements,nodes,strain,ele_id,order=1):
 	return res
 
 # 函数向量化，以提高计算效率
-flow_stress = np.vectorize(fun_flow_stress)
 area_integral = np.vectorize(fun_area_integral)
 # fun_area_integral函数中常量数组（如总单元、节点、应变）无需向量话，因此排除之，参考vectorize()函数的excluded参数说明：
 # excluded : set, optional
