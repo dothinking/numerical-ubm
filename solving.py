@@ -29,12 +29,20 @@ def strain_rate(a, b):
 	strain_rate_rz = 0.5 * (diff(sym_vr,z)+diff(sym_vz,r))
 	strain_rate = sqrt(2.0/3.0*(strain_rate_r**2 + strain_rate_z**2 + strain_rate_sita**2 + 2.0*strain_rate_rz**2))
 
-	# fun = lambda z,r: 2.0*np.pi*r*strain_rate(z,r)
-
 	# 函数化	
 	fun = lambdify((z,r),strain_rate,'numpy')
 	return fun
 
+def discontinuity_line(a,b,k,R0):
+	'''
+	* 功能：速度间断线
+	* 输入：input
+	* 输出：output
+	'''
+	c = 1.0 - (2.0/3.0*a*k**3+b*k**2)/R0**2
+	fun = lambda z: 1.5*(1-c)/a * (z**2-b/(1-c)) *z
+	return np.vectorize(fun)
+	
 def fun_flow_stress(ps):
 	'''
 	* 功能：流动应力模型
@@ -44,11 +52,13 @@ def fun_flow_stress(ps):
 	fun = np.vectorize(lambda ps: 618.14*ps**0.1184)
 	return fun(ps)
 
-def fun_area_integral(sym_fun,elements,nodes,strain,ele_id,order=1):
+def fun_area_integral(fun_integral,elements,nodes,strain,ele_id,order=1):
 	'''
 	* 功能：三角形单元积分
-	* 输入：被积函数（符号表达式），单元数组，节点坐标数组，节点应变数组，积分区域单元，积分点阶次
-	* 输出：单元积分值
+	* 输入：|- fun_integral  <function>被积函数 fun_integral = lambda z,r: 2.0*np.pi*r*strain_rate(z,r)
+			|- 单元数组，节点坐标数组，节点应变数组，积分区域单元，积分点阶次
+	        
+	* 输出：单元积分值 / (v0*cotα)
 	'''
 	### 当前积分单元所有节点坐标
 	ele_nodes = nodes[elements[ele_id]]
@@ -94,7 +104,7 @@ def fun_area_integral(sym_fun,elements,nodes,strain,ele_id,order=1):
 	int_strain.shape = (-1,1)
 	### 计算积分点函数值
 	# val_strain = plastic_work(sym_strain,int_nodes[:,0],int_nodes[:,1],int_nodes[:,2]) # 应变
-	val_strain = sym_fun(int_nodes[:,0],int_nodes[:,1])
+	val_strain = fun_integral(int_nodes[:,0],int_nodes[:,1])
 	val_stress = fun_flow_stress(int_strain[:,0]) # 应力
 	val_nodes = val_strain * val_stress
 	### 计算单元积分值
